@@ -29,6 +29,55 @@ export interface CapacitorHealthkitPlugin {
    * @param queryOptions defines the sampletypes for which you need to check for writing permission.
    */
   multipleIsEditionAuthorized(queryOptions: MultipleEditionQuery): Promise<void>;
+  /**
+   * (Joyous fork) Writes a single quantity sample to HealthKit (e.g. weight, heart rate).
+   * `unit` is an HKUnit string such as 'lb', 'count/min', 'mmHg'.
+   */
+  saveQuantitySample(options: SaveQuantitySampleOptions): Promise<void>;
+  /**
+   * (Joyous fork) Writes a blood-pressure reading as a systolic+diastolic correlation.
+   */
+  saveBloodPressure(options: SaveBloodPressureOptions): Promise<void>;
+  /**
+   * (Joyous fork) Writes a PHQ-9 or GAD-7 assessment to HealthKit. Requires iOS 18+.
+   */
+  saveAssessment(options: SaveAssessmentOptions): Promise<void>;
+}
+
+/**
+ * (Joyous fork) Options for writing a single quantity sample.
+ */
+export interface SaveQuantitySampleOptions {
+  /** A SampleNames value, e.g. 'weight', 'heartRate'. */
+  sampleName: string;
+  value: number;
+  /** HKUnit string, e.g. 'lb', 'count/min'. */
+  unit: string;
+  /** ISO-8601 date string. */
+  startDate: string;
+  /** ISO-8601 date string; defaults to startDate. */
+  endDate?: string;
+}
+
+/**
+ * (Joyous fork) Options for writing a blood-pressure correlation.
+ */
+export interface SaveBloodPressureOptions {
+  systolic: number;
+  diastolic: number;
+  /** ISO-8601 date string. */
+  date: string;
+}
+
+/**
+ * (Joyous fork) Options for writing a PHQ-9 / GAD-7 assessment (iOS 18+).
+ */
+export interface SaveAssessmentOptions {
+  type: 'phq9' | 'gad7';
+  /** Per-item raw option indexes (PHQ-9: 9 values 0–3; GAD-7: 7 values 0–3). */
+  answers: number[];
+  /** ISO-8601 date string. */
+  date: string;
 }
 
 /**

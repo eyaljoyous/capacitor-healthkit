@@ -677,4 +677,93 @@ public class CapacitorHealthkitPlugin: CAPPlugin {
         }
         healthStore.execute(query)
     }
+
+    // MARK: - Joyous fork additions — WRITE methods + PHQ-9/GAD-7 assessments
+
+    /// Write a single quantity sample (e.g. weight, heart rate) to HealthKit.
+    @objc func saveQuantitySample(_ call: CAPPluginCall) {
+        guard let sampleName = call.getString("sampleName"),
+              let value = call.getDouble("value"),
+              let unitStr = call.getString("unit"),
+              let startStr = call.getString("startDate") else {
+            return call.reject("Missing sampleName, value, unit, or startDate")
+        }
+        guard let quantityType = getSampleType(sampleName: sampleName) as? HKQuantityType else {
+            return call.reject("Unsupported or non-quantity sampleName: \(sampleName)")
+        }
+        let start = getDateFromString(inputDate: startStr)
+        let end = call.getString("endDate").map { getDateFromString(inputDate: $0) } ?? start
+        let quantity = HKQuantity(unit: HKUnit(from: unitStr), doubleValue: value)
+        let sample = HKQuantitySample(type: quantityType, quantity: quantity, start: start, end: end)
+        healthStore.save(sample) { _, error in
+            if let error = error { call.reject(error.localizedDescription) } else { call.resolve() }
+        }
+    }
+
+    /// Write a blood-pressure reading as a systolic+diastolic correlation.
+    @objc func saveBloodPressure(_ call: CAPPluginCall) {
+        guard let systolic = call.getDouble("systolic"),
+              let diastolic = call.getDouble("diastolic"),
+              let dateStr = call.getString("date") else {
+            return call.reject("Missing systolic, diastolic, or date")
+        }
+        let date = getDateFromString(inputDate: dateStr)
+        let mmHg = HKUnit.millimeterOfMercury()
+        guard let systolicType = HKQuantityType.quantityType(forIdentifier: .bloodPressureSystolic),
+              let diastolicType = HKQuantityType.quantityType(forIdentifier: .bloodPressureDiastolic),
+              let bpType = HKCorrelationType.correlationType(forIdentifier: .bloodPressure) else {
+            return call.reject("Blood pressure types unavailable")
+        }
+        let systolicSample = HKQuantitySample(type: systolicType, quantity: HKQuantity(unit: mmHg, doubleValue: systolic), start: date, end: date)
+        let diastolicSample = HKQuantitySample(type: diastolicType, quantity: HKQuantity(unit: mmHg, doubleValue: diastolic), start: date, end: date)
+        let bp = HKCorrelation(type: bpType, start: date, end: date, objects: [systolicSample, diastolicSample])
+        healthStore.save(bp) { _, error in
+            if let error = error { call.reject(error.localizedDescription) } else { call.resolve() }
+        }
+    }
+
+    /// Write a PHQ-9 or GAD-7 assessment (iOS 18+). `answers` are the per-item
+    /// raw option indexes (PHQ-9: 9 ints 0–3; GAD-7: 7 ints 0–3).
+    /// NOTE(verify on first Xcode build): confirm the exact `HKPHQ9Assessment` /
+    /// `HKGAD7Assessment` initializer + `Answer(rawValue:)` against the iOS 18 SDK.
+    @objc func saveAssessment(_ call: CAPPluginCall) {
+        guard #available(iOS 18.0, *) else {
+            return call.reject("PHQ-9/GAD-7 assessments require iOS 18 or later")
+        }
+        guard let type = call.getString("type"),
+              let dateStr = call.getString("date"),
+              let nsAnswers = call.getArray("answers", NSNumber.self) else {
+            return call.reject("Missing type, answers, or date")
+        }
+        let rawAnswers = nsAnswers.map { $0.intValue }
+        let date = getDateFromString(inputDate: dateStr)
+        do {
+            let sample: HKSample
+            switch type {
+            case "phq9":
+                let answers = try rawAnswers.map { raw -> HKPHQ9Assessment.Answer in
+                    guard let answer = HKPHQ9Assessment.Answer(rawValue: raw) else {
+                        throw NSError(domain: "JoyousHealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid PHQ-9 answer: \(raw)"])
+                    }
+                    return answer
+                }
+                sample = try HKPHQ9Assessment(date: date, answers: answers)
+            case "gad7":
+                let answers = try rawAnswers.map { raw -> HKGAD7Assessment.Answer in
+                    guard let answer = HKGAD7Assessment.Answer(rawValue: raw) else {
+                        throw NSError(domain: "JoyousHealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid GAD-7 answer: \(raw)"])
+                    }
+                    return answer
+                }
+                sample = try HKGAD7Assessment(date: date, answers: answers)
+            default:
+                return call.reject("Unknown assessment type: \(type)")
+            }
+            healthStore.save(sample) { _, error in
+                if let error = error { call.reject(error.localizedDescription) } else { call.resolve() }
+            }
+        } catch {
+            call.reject("Failed to build assessment: \(error.localizedDescription)")
+        }
+    }
 }

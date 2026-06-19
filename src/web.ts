@@ -39,4 +39,16 @@ export class CapacitorHealthkitWeb
   async multipleIsEditionAuthorized(): Promise<void> {
     throw this.unimplemented('Not implemented on web.');
   }
+
+  async saveQuantitySample(): Promise<void> {
+    throw this.unimplemented('Not available on web.');
+  }
+
+  async saveBloodPressure(): Promise<void> {
+    throw this.unimplemented('Not available on web.');
+  }
+
+  async saveAssessment(): Promise<void> {
+    throw this.unimplemented('Not available on web.');
+  }
 }
