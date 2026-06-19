@@ -109,6 +109,9 @@ And you're all set ! :+1:
 * [`multipleQueryHKitSampleType(...)`](#multiplequeryhkitsampletype)
 * [`isEditionAuthorized(...)`](#iseditionauthorized)
 * [`multipleIsEditionAuthorized(...)`](#multipleiseditionauthorized)
+* [`saveQuantitySample(...)`](#savequantitysample)
+* [`saveBloodPressure(...)`](#savebloodpressure)
+* [`saveAssessment(...)`](#saveassessment)
 * [Interfaces](#interfaces)
 
 </docgen-index>
@@ -199,9 +202,55 @@ multipleIsEditionAuthorized(queryOptions: MultipleEditionQuery) => Promise<void>
 
 Checks if there is writing permission for multiple sample types. This function has not been tested.
 
-| Param              | Type                                                                  | Description                                                                |
-| ------------------ | --------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Param              | Type                                                                  | Description                                                                 |
+| ------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | **`queryOptions`** | <code><a href="#multipleeditionquery">MultipleEditionQuery</a></code> | defines the sampletypes for which you need to check for writing permission. |
+
+--------------------
+
+
+### saveQuantitySample(...)
+
+```typescript
+saveQuantitySample(options: SaveQuantitySampleOptions) => Promise<void>
+```
+
+(Joyous fork) Writes a single quantity sample to HealthKit (e.g. weight, heart rate).
+`unit` is an HKUnit string such as 'lb', 'count/min', 'mmHg'.
+
+| Param         | Type                                                                            |
+| ------------- | ------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#savequantitysampleoptions">SaveQuantitySampleOptions</a></code> |
+
+--------------------
+
+
+### saveBloodPressure(...)
+
+```typescript
+saveBloodPressure(options: SaveBloodPressureOptions) => Promise<void>
+```
+
+(Joyous fork) Writes a blood-pressure reading as a systolic+diastolic correlation.
+
+| Param         | Type                                                                          |
+| ------------- | ----------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#savebloodpressureoptions">SaveBloodPressureOptions</a></code> |
+
+--------------------
+
+
+### saveAssessment(...)
+
+```typescript
+saveAssessment(options: SaveAssessmentOptions) => Promise<void>
+```
+
+(Joyous fork) Writes a PHQ-9 or GAD-7 assessment to HealthKit. Requires iOS 18+.
+
+| Param         | Type                                                                    |
+| ------------- | ----------------------------------------------------------------------- |
+| **`options`** | <code><a href="#saveassessmentoptions">SaveAssessmentOptions</a></code> |
 
 --------------------
 
@@ -261,9 +310,44 @@ This is used for checking writing permissions.
 
 This is used for checking writing permissions.
 
-| Prop              | Type                   |
-| ----------------- | ---------------------- |
+| Prop              | Type                  |
+| ----------------- | --------------------- |
 | **`sampleNames`** | <code>string[]</code> |
+
+
+#### SaveQuantitySampleOptions
+
+(Joyous fork) Options for writing a single quantity sample.
+
+| Prop             | Type                | Description                                      |
+| ---------------- | ------------------- | ------------------------------------------------ |
+| **`sampleName`** | <code>string</code> | A SampleNames value, e.g. 'weight', 'heartRate'. |
+| **`value`**      | <code>number</code> |                                                  |
+| **`unit`**       | <code>string</code> | HKUnit string, e.g. 'lb', 'count/min'.           |
+| **`startDate`**  | <code>string</code> | ISO-8601 date string.                            |
+| **`endDate`**    | <code>string</code> | ISO-8601 date string; defaults to startDate.     |
+
+
+#### SaveBloodPressureOptions
+
+(Joyous fork) Options for writing a blood-pressure correlation.
+
+| Prop            | Type                | Description           |
+| --------------- | ------------------- | --------------------- |
+| **`systolic`**  | <code>number</code> |                       |
+| **`diastolic`** | <code>number</code> |                       |
+| **`date`**      | <code>string</code> | ISO-8601 date string. |
+
+
+#### SaveAssessmentOptions
+
+(Joyous fork) Options for writing a PHQ-9 / GAD-7 assessment (iOS 18+).
+
+| Prop          | Type                          | Description                                                             |
+| ------------- | ----------------------------- | ----------------------------------------------------------------------- |
+| **`type`**    | <code>'phq9' \| 'gad7'</code> |                                                                         |
+| **`answers`** | <code>number[]</code>         | Per-item raw option indexes (PHQ-9: 9 values 0–3; GAD-7: 7 values 0–3). |
+| **`date`**    | <code>string</code>           | ISO-8601 date string.                                                   |
 
 </docgen-api>
 
