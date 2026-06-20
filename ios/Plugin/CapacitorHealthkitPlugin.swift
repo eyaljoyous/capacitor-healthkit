@@ -95,47 +95,16 @@ public class CapacitorHealthkitPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     func getTypes(items: [String]) -> Set<HKSampleType> {
+        // Joyous fork: delegate to getSampleType so authorization understands the
+        // same SampleNames keys the JS layer sends ("stepCount", "weight", …)
+        // rather than the legacy auth aliases ("steps", "calories", …). Without
+        // this, activity types fell through to "no match" and were dropped from
+        // the permission request.
         var types: Set<HKSampleType> = []
         for item in items {
-            switch item {
-            case "steps":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.stepCount)!)
-            case "stairs":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.flightsClimbed)!)
-            case "duration":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.appleExerciseTime)!)
-            case "activity":
-                types.insert(HKObjectType.categoryType(forIdentifier: HKCategoryTypeIdentifier.sleepAnalysis)!)
-                types.insert(HKWorkoutType.workoutType())
-            case "calories":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.activeEnergyBurned)!)
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.basalEnergyBurned)!)
-            case "distance":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.distanceWalkingRunning)!)
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.distanceCycling)!)
-            case "bloodGlucose":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bloodGlucose)!)
-            case "weight":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyMass)!)
-            case "heartRate":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.heartRate)!)
-            case "restingHeartRate":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.restingHeartRate)!)
-            case "respiratoryRate":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.respiratoryRate)!)
-            case "bodyFat":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyFatPercentage)!)
-            case "oxygenSaturation":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.oxygenSaturation)!)
-            case "basalBodyTemperature":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.basalBodyTemperature)!)
-            case "bodyTemperature":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bodyTemperature)!)
-            case "bloodPressureSystolic":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bloodPressureSystolic)!)
-            case "bloodPressureDiastolic":
-                types.insert(HKQuantityType.quantityType(forIdentifier: HKQuantityTypeIdentifier.bloodPressureDiastolic)!)
-            default:
+            if let type = getSampleType(sampleName: item) {
+                types.insert(type)
+            } else {
                 print("no match in case: " + item)
             }
         }
