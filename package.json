@@ -9,6 +9,7 @@
   "files": [
     "dist/",
     "ios/Plugin/",
+    "Package.swift",
     "JoyousCapacitorHealthkit.podspec"
   ],
   "author": "Joyous (fork of Perfood GmbH)",
